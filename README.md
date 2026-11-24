@@ -16,6 +16,14 @@ Waking up in the middle of deep or REM sleep leaves you groggy. **AwakeTime** ca
 
 ---
 
+## 📸 Screenshots
+
+| Bedtime Calculator | Wake-Up Calculator | Calibration Profiles | Custom Alarm Sounds |
+| :---: | :---: | :---: | :---: |
+| <img src="screenshots/bedtime.jpg" width="200" alt="Bedtime Calculator" /> | <img src="screenshots/wakeup.jpg" width="200" alt="Wake-Up Calculator" /> | <img src="screenshots/calibration.jpg" width="200" alt="Calibration Profiles" /> | <img src="screenshots/alarm-sound.jpg" width="200" alt="Custom Alarm Sounds" /> |
+
+---
+
 ## ✨ Features
 
 - **🛏️ Bedtime → Wake-Up Calculator:** Enter when you're going to bed (plus how long it takes you to fall asleep) and get optimal wake-up windows across 3–7 full sleep cycles.
