@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AwakeTime">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <meta name="theme-color" content="#6c5ce7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <title>AwakeTime</title>
+  <style>
+    /* =========== RESET & BASE =========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary:   #0a0a1a;
+      --bg-card:      #12122a;
+      --bg-card-alt:  #1a1a35;
+      --purple:       #6c5ce7;
+      --purple-light: #a29bfe;
+      --purple-glow:  rgba(108, 92, 231, 0.3);
+      --blue:         #74b9ff;
+      --cyan:         #81ecec;
+      --green:        #55efc4;
+      --orange:       #fdcb6e;
+      --red:          #ff7675;
+      --pink:         #fd79a8;
+      --text:         #e8e8f0;
+      --text-dim:     #8888aa;
+      --text-muted:   #55557a;
+      --radius:       16px;
+      --radius-sm:    10px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* =========== LAYOUT =========== */
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 16px 100px;
+      position: relative;
+    }
+
+    /* =========== HEADER =========== */
+    .header {
+      text-align: center;
+      padding: 40px 0 24px;
+    }
+
+    .header .logo {
+      font-size: 2.4rem;
+      margin-bottom: 4px;
+    }
+
+    .header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--purple-light), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header p {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    /* =========== MODE TABS =========== */
+    .mode-tabs {
+      display: flex;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 4px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border: none;
+      background: none;
+      z-index: 1;
+    }
+
+    .mode-tab.active {
+      color: var(--text);
+    }
+
+    .mode-tab-bg {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      height: calc(100% - 8px);
+      width: calc(33.333% - 3px);
+      background: var(--purple);
+      border-radius: 12px;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 0;
+    }
+
+    .mode-tab-bg[data-pos="1"] { transform: translateX(calc(100% + 1.5px)); }
+    .mode-tab-bg[data-pos="2"] { transform: translateX(calc(200% + 3px)); }
+
+    .mode-tab .tab-icon { font-size: 1.1rem; display: block; margin-bottom: 2px; }
+
+    /* =========== PANELS =========== */
+    .panel { display: none; animation: fadeIn 0.4s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* =========== TIME PICKER =========== */
+    .time-input-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(108, 92, 231, 0.15);
+    }
+
+    .time-input-card label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .time-picker-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .time-scroll-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .time-scroll-col button {
+      background: var(--bg-card-alt);
+      border: none;
+      color: var(--text-dim);
+      width: 48px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .time-scroll-col button:hover { background: var(--purple); color: #fff; }
+    .time-scroll-col button:active { transform: scale(0.92); }
+
+    .time-display {
+      font-size: 3.4rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      width: 90px;
+      text-align: center;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .time-sep {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--purple-light);
+      animation: blink 1.5s infinite;
+      line-height: 1;
+      margin-top: 4px;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .ampm-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-left: 8px;
+    }
+
+    .ampm-btn {
+      background: var(--bg-card-alt);
+      border: 1px solid transparent;
+      color: var(--text-dim);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ampm-btn.active {
+      background: var(--purple);
+      color: #fff;
+      border-color: var(--purple-light);
+    }
+
+    .onset-slider {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .onset-slider label {
+      margin-bottom: 8px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      outline: none;
+    }
+
+    .slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--purple);
+      cursor: pointer;
+    }
+
+    .slider-val {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--purple-light);
+      min-width: 50px;
+      text-align: right;
+    }
+
+    /* =========== CALCULATE BUTTON =========== */
+    .calc-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--purple), #4834d4);
+      box-shadow: 0 4px 20px var(--purple-glow);
+      transition: all 0.3s;
+      margin-bottom: 24px;
+    }
+    .calc-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px var(--purple-glow); }
+    .calc-btn:active { transform: translateY(1px); }
+
+    /* =========== RESULTS =========== */
+    .results-section { margin-bottom: 24px; }
+
+    .results-section h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .result-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      border-radius: 4px 0 0 4px;
+    }
+
+    .result-card.ideal::before { background: var(--green); }
+    .result-card.good::before { background: var(--blue); }
+    .result-card.ok::before { background: var(--orange); }
+    .result-card.short::before { background: var(--red); }
+
+    .result-card:hover {
+      border-color: var(--purple);
+      transform: translateX(4px);
+    }
+
+    .result-card.selected {
+      border-color: var(--purple);
+      background: var(--bg-card-alt);
+      box-shadow: 0 0 20px var(--purple-glow);
+    }
+
+    .result-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .result-time {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .result-meta {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+
+    .result-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-card.ideal .result-badge { background: rgba(85, 239, 196, 0.15); color: var(--green); }
+    .result-card.good  .result-badge { background: rgba(116, 185, 255, 0.15); color: var(--blue); }
+    .result-card.ok    .result-badge { background: rgba(253, 203, 110, 0.15); color: var(--orange); }
+    .result-card.short .result-badge { background: rgba(255, 118, 117, 0.15); color: var(--red); }
+
+    /* =========== CYCLE VISUALIZATION =========== */
+    .cycle-viz {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .cycle-viz h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .cycle-bar-container {
+      position: relative;
+      height: 48px;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      margin-bottom: 12px;
+    }
+
+    .cycle-segment {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .cycle-segment.light { background: var(--blue); }
+    .cycle-segment.deep  { background: #2d3436; }
+    .cycle-segment.rem   { background: var(--purple); }
+    .cycle-segment.awake-seg { background: var(--pink); }
+
+    .cycle-legend {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* =========== ALARM SECTION =========== */
+    .alarm-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      border: 1px solid rgba(108, 92, 231, 0.15);
+      margin-bottom: 20px;
+    }
+
+    .alarm-card h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .alarm-time-display {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .alarm-remaining {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    .alarm-set-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .alarm-set-btn.set {
+      background: linear-gradient(135deg, var(--green), #00b894);
+      color: #000;
+    }
+
+    .alarm-set-btn.cancel {
+      background: linear-gradient(135deg, var(--red), #d63031);
+      color: #fff;
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 118, 117, 0.3); }
+      50% { box-shadow: 0 0 25px rgba(255, 118, 117, 0.6); }
+    }
+
+    .alarm-ringing {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .alarm-ringing.active { display: block; }
+
+    .alarm-ringing .ring-icon {
+      font-size: 5rem;
+      animation: shake 0.4s infinite alternate;
+    }
+
+    @keyframes shake {
+      0% { transform: rotate(-15deg); }
+      100% { transform: rotate(15deg); }
+    }
+
+    .alarm-ringing .ring-time {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--green);
+      margin: 16px 0;
+    }
+
+    .alarm-ringing .ring-msg {
+      color: var(--text-dim);
+      margin-bottom: 24px;
+    }
+
+    .stop-alarm-btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 3px solid var(--red);
+      background: rgba(255, 118, 117, 0.15);
+      color: var(--red);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .stop-alarm-btn:active {
+      transform: scale(0.9);
+      background: var(--red);
+      color: #fff;
+    }
+
+    /* =========== SETTINGS PANEL =========== */
+    .settings-group {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .settings-group h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .setting-row:last-child { border-bottom: none; }
+
+    .setting-label {
+      font-size: 0.9rem;
+    }
+
+    .setting-label small {
+      display: block;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      margin-top: 2px;
+    }
+
+    .setting-value {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting-value input[type="number"] {
+      width: 72px;
+      padding: 8px 12px;
+      background: var(--bg-card-alt);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .setting-value input[type="number"]:focus {
+      outline: none;
+      border-color: var(--purple);
+    }
+
+    .setting-value .unit {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .profile-card {
+      background: linear-gradient(135deg, var(--bg-card), var(--bg-card-alt));
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(108, 92, 231, 0.2);
+    }
+
+    .profile-card h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--purple-light);
+      margin-bottom: 12px;
+    }
+
+    .profile-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .profile-stat {
+      text-align: center;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: var(--radius-sm);
+    }
+
+    .profile-stat .stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--purple-light);
+    }
+
+    .profile-stat .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* =========== NO RESULTS =========== */
+    .no-results {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-dim);
+    }
+
+    .no-results .nr-icon { font-size: 3rem; margin-bottom: 12px; }
+    .no-results p { font-size: 0.9rem; }
+
+    /* =========== HIDDEN =========== */
+    .hidden { display: none !important; }
+
+    /* =========== SOUND SELECTOR =========== */
+    .sound-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .sound-option {
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: var(--bg-card-alt);
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sound-option.active {
+      border-color: var(--purple);
+      background: rgba(108, 92, 231, 0.2);
+      color: var(--purple-light);
+    }
+
+    .sound-option:hover { border-color: var(--purple); }
+
+    /* =========== PROFILE SWITCH =========== */
+    .profile-switch { display: flex; gap: 10px; }
+    .profile-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.2);
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .profile-btn small {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 400;
+      margin-top: 2px;
+      opacity: 0.8;
+    }
+    .profile-btn.active {
+      border-color: var(--purple);
+      background: rgba(108, 92, 231, 0.25);
+      color: var(--text);
+      box-shadow: 0 0 14px var(--purple-glow);
+    }
+    .reset-profile-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 8px;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .reset-profile-btn:hover { color: var(--text-dim); border-color: var(--purple); }
+    .header .profile-pill {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      background: rgba(108, 92, 231, 0.15);
+      color: var(--purple-light);
+      cursor: pointer;
+    }
+
+    /* =========== CUSTOM SOUND UPLOAD =========== */
+    .upload-area {
+      margin-top: 12px;
+      padding: 16px;
+      border: 2px dashed rgba(108, 92, 231, 0.3);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .upload-area:hover {
+      border-color: var(--purple);
+      background: rgba(108, 92, 231, 0.05);
+    }
+
+    .upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .upload-area .upload-icon { font-size: 1.5rem; margin-bottom: 4px; }
+
+    .upload-area .upload-text {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .upload-area .upload-text small {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .custom-sound-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: rgba(108, 92, 231, 0.1);
+      border: 1px solid rgba(108, 92, 231, 0.25);
+      border-radius: var(--radius-sm);
+    }
+
+    .custom-sound-info .cs-name {
+      flex: 1;
+      font-size: 0.82rem;
+      color: var(--purple-light);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .custom-sound-info button {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-dim);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .custom-sound-info button:hover {
+      border-color: var(--purple);
+      color: var(--purple-light);
+    }
+
+    .custom-sound-info button.cs-delete:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    /* =========== SELECTED RESULT ALARM INLINE =========== */
+    .result-card.selected .result-alarm-btn {
+      display: inline-flex;
+    }
+
+    .result-alarm-btn {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-alarm-btn.set-inline {
+      background: linear-gradient(135deg, var(--green), #00b894);
+      color: #000;
+    }
+
+    .result-alarm-btn.active-inline {
+      background: linear-gradient(135deg, var(--red), #d63031);
+      color: #fff;
+      animation: pulseGlow 2s infinite;
+    }
+
+    /* =========== FOOTER =========== */
+    .footer {
+      text-align: center;
+      padding: 24px 0 16px;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+    }
+
+    /* =========== BACKGROUND DECORATION =========== */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 50% 0%, rgba(108, 92, 231, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* =========== SCROLLBAR =========== */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 2px; }
+
+    /* =========== MEDIA SCALING (all screens) =========== */
+    img, video, svg, canvas { max-width: 100%; height: auto; }
+    iframe, embed, object { max-width: 100%; }
+
+    /* Remove double-tap zoom delay on controls */
+    button, input, .result-card, .upload-area { touch-action: manipulation; }
+
+    /* Phone menu toggle — hidden on desktop */
+    .menu-toggle { display: none; }
+
+    /* Alarm ringing: full-screen so it's visible wherever you've scrolled */
+    .alarm-ringing.active {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 10, 26, 0.97);
+      padding: 24px;
+    }
+
+    /* Touch screens: no hover-shift (avoids sticky hover + sideways nudge) */
+    @media (hover: none) {
+      .result-card:hover { transform: none; }
+      .calc-btn:hover { transform: none; }
+    }
+
+    /* =========== PHONES & SMALL SCREENS =========== */
+    @media (max-width: 600px) {
+      html, body { overflow-x: hidden; }
+      body { font-size: 1rem; overflow-wrap: anywhere; }
+
+      /* Keep the decorative glow inside the screen */
+      body::before { top: 0; left: 0; width: 100%; height: 100%; }
+
+      .app {
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+      }
+
+      .header { padding: calc(20px + env(safe-area-inset-top)) 0 16px; }
+      .header .logo { font-size: 2rem; }
+      .header p { font-size: 1rem; }
+      .header .profile-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 16px;
+        font-size: 0.9rem;
+      }
+
+      /* ---- Navigation collapses into a menu ---- */
+      .menu-toggle {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        min-height: 52px;
+        padding: 0 16px;
+        margin-bottom: 8px;
+        background: var(--bg-card);
+        border: 1px solid rgba(108, 92, 231, 0.25);
+        border-radius: var(--radius);
+        color: var(--text);
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .menu-toggle .menu-icon { font-size: 1.3rem; color: var(--purple-light); }
+      .menu-toggle .menu-current { flex: 1; text-align: left; }
+      .menu-toggle .menu-caret { color: var(--text-dim); transition: transform 0.25s; }
+      .menu-toggle[aria-expanded="true"] .menu-caret { transform: rotate(180deg); }
+
+      .mode-tabs {
+        display: none;
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(108, 92, 231, 0.25);
+      }
+      .mode-tabs.open { display: flex; animation: fadeIn 0.2s ease; }
+      .mode-tab-bg { display: none; }
+      .mode-tab {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 48px;
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 1rem;
+      }
+      .mode-tab .tab-icon { display: inline; margin: 0; font-size: 1.2rem; }
+      .mode-tab.active { background: var(--purple); color: #fff; }
+
+      /* ---- Time picker fits a 320px screen ---- */
+      .time-input-card { padding: 20px 14px; }
+      .time-input-card label { font-size: 0.9rem; }
+      .time-picker-row { gap: 6px; }
+      .time-display { font-size: 2.8rem; width: 72px; }
+      .time-sep { font-size: 2.4rem; }
+      .time-scroll-col button { width: 56px; height: 44px; font-size: 1.1rem; }
+      .ampm-toggle { margin-left: 4px; gap: 6px; }
+      .ampm-btn { min-height: 44px; min-width: 52px; font-size: 1rem; }
+
+      /* Range slider: 44px touch area, bigger thumb */
+      .slider-row input[type="range"] {
+        height: 44px;
+        background: transparent;
+      }
+      .slider-row input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, var(--purple), var(--cyan));
+      }
+      .slider-row input[type="range"]::-webkit-slider-thumb {
+        width: 32px;
+        height: 32px;
+        margin-top: -13px;
+      }
+      .slider-row input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, var(--purple), var(--cyan));
+      }
+      .slider-row input[type="range"]::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid var(--purple);
+      }
+      .slider-val { font-size: 1rem; }
+
+      /* ---- Results ---- */
+      .results-section h3,
+      .cycle-viz h3,
+      .alarm-card h3,
+      .settings-group h3,
+      .profile-card h3 { font-size: 0.9rem; }
+
+      #bed-results > p,
+      #wake-results > p { font-size: 1rem !important; }
+
+      .result-card {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 14px 16px;
+      }
+      .result-left { min-width: 0; }
+      .result-card > div:last-child {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        margin-left: auto;
+      }
+      .result-meta { font-size: 1rem; }
+      .result-badge { font-size: 0.8rem; padding: 6px 12px; }
+      .result-alarm-btn {
+        min-height: 44px;
+        padding: 10px 16px;
+        font-size: 0.95rem;
+      }
+
+      .legend-item { font-size: 0.9rem; }
+      .alarm-time-display { font-size: 2.6rem; }
+      .alarm-remaining { font-size: 1rem; }
+      .alarm-set-btn { min-height: 48px; }
+
+      /* ---- Settings ---- */
+      .profile-btn { min-height: 56px; font-size: 1rem; }
+      .profile-btn small { font-size: 0.85rem; }
+      .profile-stat .stat-label { font-size: 0.8rem; }
+      .reset-profile-btn { min-height: 44px; font-size: 1rem; }
+
+      #panel-settings p { font-size: 1rem !important; line-height: 1.5; }
+
+      .setting-row { gap: 12px; }
+      .setting-label { flex: 1; min-width: 0; font-size: 1rem; }
+      .setting-label small { font-size: 0.9rem; }
+      .setting-value input[type="number"] {
+        width: 80px;
+        min-height: 44px;
+        font-size: 16px; /* prevents iOS zoom-on-focus */
+      }
+      .setting-value .unit { font-size: 0.9rem; }
+
+      .sound-option { min-height: 44px; padding: 10px 16px; font-size: 1rem; }
+      .upload-area .upload-text { font-size: 1rem; }
+      .upload-area .upload-text small { font-size: 0.85rem; }
+      .custom-sound-info .cs-name { min-width: 0; font-size: 1rem; }
+      .custom-sound-info button { width: 44px; height: 44px; font-size: 1rem; }
+
+      .stop-alarm-btn { font-size: 1.1rem; }
+      .footer { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- HEADER -->
+    <div class="header">
+      <div class="logo">🌙</div>
+      <h1>AwakeTime</h1>
+      <p>Smart Sleep Cycle Calculator</p>
+      <span class="profile-pill" id="header-profile" onclick="document.querySelector('[data-mode=settings]').click()">⭐ Main profile · 95 min</span>
+    </div>
+
+    <!-- MODE TABS (collapses into a menu on small screens) -->
+    <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="mode-tabs" onclick="toggleMenu(event)">
+      <span class="menu-icon" aria-hidden="true">☰</span>
+      <span class="menu-current" id="menu-current">🛏️ Bedtime</span>
+      <span class="menu-caret" aria-hidden="true">▾</span>
+    </button>
+    <nav class="mode-tabs" id="mode-tabs" aria-label="Sections">
+      <div class="mode-tab-bg" data-pos="0"></div>
+      <button class="mode-tab active" data-mode="bedtime">
+        <span class="tab-icon">🛏️</span> Bedtime
+      </button>
+      <button class="mode-tab" data-mode="waketime">
+        <span class="tab-icon">⏰</span> Wake Up
+      </button>
+      <button class="mode-tab" data-mode="settings">
+        <span class="tab-icon">⚙️</span> Settings
+      </button>
+    </nav>
+
+    <!-- ===== BEDTIME PANEL ===== -->
+    <div class="panel active" id="panel-bedtime">
+      <div class="time-input-card">
+        <label>🌙 I'm going to bed at...</label>
+        <div class="time-picker-row">
+          <div class="time-scroll-col">
+            <button onclick="adjustTime('bed', 'h', 1)">▲</button>
+            <div class="time-display" id="bed-hour">11</div>
+            <button onclick="adjustTime('bed', 'h', -1)">▼</button>
+          </div>
+          <span class="time-sep">:</span>
+          <div class="time-scroll-col">
+            <button onclick="adjustTime('bed', 'm', 5)">▲</button>
+            <div class="time-display" id="bed-min">00</div>
+            <button onclick="adjustTime('bed', 'm', -5)">▼</button>
+          </div>
+          <div class="ampm-toggle">
+            <button class="ampm-btn" id="bed-am" onclick="setAmPm('bed','AM')">AM</button>
+            <button class="ampm-btn active" id="bed-pm" onclick="setAmPm('bed','PM')">PM</button>
+          </div>
+        </div>
+        <div class="onset-slider">
+          <label>😴 Time to fall asleep</label>
+          <div class="slider-row">
+            <input type="range" min="5" max="45" value="15" id="onset-slider" oninput="updateOnsetLabel()">
+            <span class="slider-val" id="onset-val">15 min</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="calc-btn" onclick="calculateWakeUp()">
+        ☀️ Calculate Best Wake-Up Times
+      </button>
+
+      <div id="bed-results"></div>
+    </div>
+
+    <!-- ===== WAKE TIME PANEL ===== -->
+    <div class="panel" id="panel-waketime">
+      <div class="time-input-card">
+        <label>⏰ I need to wake up at...</label>
+        <div class="time-picker-row">
+          <div class="time-scroll-col">
+            <button onclick="adjustTime('wake', 'h', 1)">▲</button>
+            <div class="time-display" id="wake-hour">07</div>
+            <button onclick="adjustTime('wake', 'h', -1)">▼</button>
+          </div>
+          <span class="time-sep">:</span>
+          <div class="time-scroll-col">
+            <button onclick="adjustTime('wake', 'm', 5)">▲</button>
+            <div class="time-display" id="wake-min">00</div>
+            <button onclick="adjustTime('wake', 'm', -5)">▼</button>
+          </div>
+          <div class="ampm-toggle">
+            <button class="ampm-btn active" id="wake-am" onclick="setAmPm('wake','AM')">AM</button>
+            <button class="ampm-btn" id="wake-pm" onclick="setAmPm('wake','PM')">PM</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="calc-btn" onclick="calculateBedtime()">
+        🌙 Calculate Best Bedtimes
+      </button>
+
+      <div id="wake-results"></div>
+    </div>
+
+    <!-- ===== SETTINGS PANEL ===== -->
+    <div class="panel" id="panel-settings">
+      <div class="profile-card">
+        <h3>👤 Calibration Profile</h3>
+        <div class="profile-switch">
+          <button class="profile-btn active" data-profile="main" onclick="switchProfile('main')">
+            ⭐ Main<small>My calibration</small>
+          </button>
+          <button class="profile-btn" data-profile="average" onclick="switchProfile('average')">
+            🌍 Average<small>Regular person</small>
+          </button>
+        </div>
+        <p id="profile-desc" style="font-size: 0.8rem; color: var(--text-dim); margin: 12px 0;">
+          Analyzed from 6 nights of sleep data
+        </p>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="stat-value" id="stat-cycle">95</div>
+            <div class="stat-label">Cycle (min)</div>
+          </div>
+          <div class="profile-stat">
+            <div class="stat-value" id="stat-light">52%</div>
+            <div class="stat-label">Light Sleep</div>
+          </div>
+          <div class="profile-stat">
+            <div class="stat-value" id="stat-rem">22%</div>
+            <div class="stat-label">REM Sleep</div>
+          </div>
+          <div class="profile-stat">
+            <div class="stat-value" id="stat-deep">18%</div>
+            <div class="stat-label">Deep Sleep</div>
+          </div>
+        </div>
+        <button class="reset-profile-btn" onclick="resetProfile()">↺ Reset this profile to defaults</button>
+      </div>
+
+      <div class="settings-group">
+        <h3>🔧 Cycle Calibration</h3>
+        <div class="setting-row">
+          <div class="setting-label">
+            Sleep cycle length
+            <small>Your personal cycle duration</small>
+          </div>
+          <div class="setting-value">
+            <input type="number" id="set-cycle" value="95" min="70" max="120" onchange="saveSetting('cycle', this.value)">
+            <span class="unit">min</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            Default sleep onset
+            <small>How long it takes to fall asleep</small>
+          </div>
+          <div class="setting-value">
+            <input type="number" id="set-onset" value="15" min="1" max="60" onchange="saveSetting('onset', this.value)">
+            <span class="unit">min</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            Wake window tolerance
+            <small>±minutes around optimal time</small>
+          </div>
+          <div class="setting-value">
+            <input type="number" id="set-window" value="10" min="5" max="20" onchange="saveSetting('window', this.value)">
+            <span class="unit">min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>🔔 Alarm Sound</h3>
+        <div class="sound-selector">
+          <button class="sound-option active" data-sound="gentle" onclick="selectSound('gentle')">🎵 Gentle</button>
+          <button class="sound-option" data-sound="birds" onclick="selectSound('birds')">🐦 Birds</button>
+          <button class="sound-option" data-sound="chime" onclick="selectSound('chime')">🔔 Chime</button>
+          <button class="sound-option" data-sound="classic" onclick="selectSound('classic')">⏰ Classic</button>
+          <button class="sound-option" data-sound="custom" id="custom-sound-btn" onclick="selectSound('custom')" style="display:none">🎧 My Sound</button>
+        </div>
+
+        <div class="upload-area" id="upload-area">
+          <input type="file" accept="audio/*" id="sound-file-input" onchange="handleSoundUpload(event)">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text">
+            Upload your own alarm sound
+            <small>MP3, WAV, OGG, M4A — max 5 MB</small>
+          </div>
+        </div>
+
+        <div class="custom-sound-info hidden" id="custom-sound-info">
+          <span>🎧</span>
+          <span class="cs-name" id="custom-sound-name">—</span>
+          <button onclick="previewCustomSound()" title="Preview">▶</button>
+          <button class="cs-delete" onclick="deleteCustomSound()" title="Remove">✕</button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>ℹ️ About</h3>
+        <p style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.6;">
+          AwakeTime calculates optimal wake-up times based on your personal sleep cycle pattern.
+          Waking at the end of a REM → Light sleep transition helps you feel more refreshed and alert.
+        </p>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
+          Main profile: based on 6 nights analyzed · Average profile: 90-min textbook cycle
+        </p>
+      </div>
+    </div>
+
+    <!-- ALARM RINGING OVERLAY -->
+    <div class="alarm-ringing" id="alarm-ringing">
+      <div class="ring-icon">⏰</div>
+      <div class="ring-time" id="ring-time">7:00 AM</div>
+      <div class="ring-msg">Time to wake up! You're in light sleep right now 🌅</div>
+      <button class="stop-alarm-btn" onclick="stopAlarm()">STOP</button>
+    </div>
+
+    <div class="footer">
+      AwakeTime v1.0 · Personalized to your sleep cycles
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // STATE
+    // ============================================================
+    const state = {
+      bedHour: 11, bedMin: 0, bedAmPm: 'PM',
+      wakeHour: 7, wakeMin: 0, wakeAmPm: 'AM',
+      cycle: 95,     // minutes per cycle (personalized)
+      onset: 15,     // sleep onset latency
+      window: 10,    // ±minutes tolerance
+      sound: 'gentle',
+      alarmTimeout: null,
+      alarmActive: false,
+      selectedAlarmTime: null,
+      audioCtx: null,
+      oscillator: null,
+      customSoundData: null,   // base64 audio data
+      customSoundName: null,   // filename
+      customAudioEl: null,     // Audio element for custom sound playback
+    };
+
+    // ============================================================
+    // CALIBRATION PROFILES
+    // ============================================================
+    const PROFILE_DEFAULTS = {
+      main: {
+        name: '⭐ Main', cycle: 95, onset: 15, window: 10,
+        light: '52%', rem: '22%', deep: '18%',
+        desc: 'Analyzed from 6 nights of sleep data'
+      },
+      average: {
+        name: '🌍 Average', cycle: 90, onset: 15, window: 10,
+        light: '50–60%', rem: '20–25%', deep: '13–23%',
+        desc: 'Typical adult values from sleep research (no personal data needed)'
+      }
+    };
+    let profiles = JSON.parse(JSON.stringify(PROFILE_DEFAULTS));
+    let activeProfile = 'main';
+
+    function saveProfiles() {
+      localStorage.setItem('awaketime-profiles', JSON.stringify({ profiles, activeProfile }));
+    }
+
+    function applyProfile() {
+      const p = profiles[activeProfile];
+      state.cycle = p.cycle;
+      state.onset = p.onset;
+      state.window = p.window;
+      document.getElementById('set-cycle').value = p.cycle;
+      document.getElementById('set-onset').value = p.onset;
+      document.getElementById('set-window').value = p.window;
+      document.getElementById('onset-slider').value = p.onset;
+      updateOnsetLabel();
+      document.getElementById('stat-cycle').textContent = p.cycle;
+      document.getElementById('stat-light').textContent = p.light;
+      document.getElementById('stat-rem').textContent = p.rem;
+      document.getElementById('stat-deep').textContent = p.deep;
+      document.getElementById('profile-desc').textContent = p.desc;
+      document.getElementById('header-profile').textContent = `${p.name} profile · ${p.cycle} min`;
+      document.querySelectorAll('.profile-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.profile === activeProfile));
+    }
+
+    function switchProfile(name) {
+      activeProfile = name;
+      applyProfile();
+      saveProfiles();
+      recalcVisible();
+    }
+
+    function resetProfile() {
+      if (!confirm(`Reset the ${profiles[activeProfile].name} profile to its default values?`)) return;
+      profiles[activeProfile] = JSON.parse(JSON.stringify(PROFILE_DEFAULTS[activeProfile]));
+      applyProfile();
+      saveProfiles();
+      recalcVisible();
+    }
+
+    function recalcVisible() {
+      if (document.getElementById('bed-results').innerHTML.trim()) calculateWakeUp();
+      if (document.getElementById('wake-results').innerHTML.trim()) calculateBedtime();
+    }
+
+    // Load saved settings
+    function loadSettings() {
+      const saved = localStorage.getItem('awaketime-settings');
+      if (saved) {
+        const s = JSON.parse(saved);
+        if (s.sound) state.sound = s.sound;
+        document.querySelectorAll('.sound-option').forEach(el => {
+          el.classList.toggle('active', el.dataset.sound === state.sound);
+        });
+      }
+      const savedProfiles = localStorage.getItem('awaketime-profiles');
+      if (savedProfiles) {
+        const sp = JSON.parse(savedProfiles);
+        profiles = Object.assign(profiles, sp.profiles);
+        activeProfile = sp.activeProfile || 'main';
+      }
+      applyProfile();
+      // Load custom sound
+      const customData = localStorage.getItem('awaketime-custom-sound');
+      const customName = localStorage.getItem('awaketime-custom-sound-name');
+      if (customData && customName) {
+        state.customSoundData = customData;
+        state.customSoundName = customName;
+        showCustomSoundUI(customName);
+      }
+    }
+
+    function saveSettings() {
+      localStorage.setItem('awaketime-settings', JSON.stringify({ sound: state.sound }));
+    }
+
+    function saveSetting(key, val) {
+      const n = parseInt(val);
+      if (isNaN(n)) return;
+      state[key] = n;
+      profiles[activeProfile][key] = n;   // edits only affect the active profile
+      applyProfile();
+      saveProfiles();
+      recalcVisible();
+    }
+
+    function selectSound(s) {
+      state.sound = s;
+      document.querySelectorAll('.sound-option').forEach(el => {
+        el.classList.toggle('active', el.dataset.sound === s);
+      });
+      previewSound(s);
+      saveSettings();
+    }
+
+    // ============================================================
+    // MODE TABS
+    // ============================================================
+    const tabs = document.querySelectorAll('.mode-tab');
+    const tabBg = document.querySelector('.mode-tab-bg');
+    const panels = document.querySelectorAll('.panel');
+
+    const menuToggle = document.getElementById('menu-toggle');
+    const modeTabsNav = document.getElementById('mode-tabs');
+
+    function setMenuOpen(open) {
+      modeTabsNav.classList.toggle('open', open);
+      menuToggle.setAttribute('aria-expanded', String(open));
+    }
+
+    function toggleMenu(e) {
+      if (e) e.stopPropagation();
+      setMenuOpen(!modeTabsNav.classList.contains('open'));
+    }
+
+    // Close the phone menu when tapping anywhere else
+    document.addEventListener('click', e => {
+      if (!modeTabsNav.contains(e.target) && !menuToggle.contains(e.target)) setMenuOpen(false);
+    });
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        tabBg.setAttribute('data-pos', i);
+        panels.forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-' + tab.dataset.mode).classList.add('active');
+        document.getElementById('menu-current').textContent = tab.textContent.replace(/\s+/g, ' ').trim();
+        setMenuOpen(false);
+      });
+    });
+
+    // ============================================================
+    // TIME PICKER
+    // ============================================================
+    function adjustTime(prefix, unit, delta) {
+      if (prefix === 'bed') {
+        if (unit === 'h') {
+          state.bedHour = ((state.bedHour - 1 + delta + 12) % 12) + 1;
+          document.getElementById('bed-hour').textContent = String(state.bedHour).padStart(2, '0');
+        } else {
+          state.bedMin = ((state.bedMin + delta) + 60) % 60;
+          document.getElementById('bed-min').textContent = String(state.bedMin).padStart(2, '0');
+        }
+      } else {
+        if (unit === 'h') {
+          state.wakeHour = ((state.wakeHour - 1 + delta + 12) % 12) + 1;
+          document.getElementById('wake-hour').textContent = String(state.wakeHour).padStart(2, '0');
+        } else {
+          state.wakeMin = ((state.wakeMin + delta) + 60) % 60;
+          document.getElementById('wake-min').textContent = String(state.wakeMin).padStart(2, '0');
+        }
+      }
+    }
+
+    function setAmPm(prefix, val) {
+      if (prefix === 'bed') {
+        state.bedAmPm = val;
+        document.getElementById('bed-am').classList.toggle('active', val === 'AM');
+        document.getElementById('bed-pm').classList.toggle('active', val === 'PM');
+      } else {
+        state.wakeAmPm = val;
+        document.getElementById('wake-am').classList.toggle('active', val === 'AM');
+        document.getElementById('wake-pm').classList.toggle('active', val === 'PM');
+      }
+    }
+
+    function updateOnsetLabel() {
+      const v = document.getElementById('onset-slider').value;
+      document.getElementById('onset-val').textContent = v + ' min';
+      state.onset = parseInt(v);
+    }
+
+    // ============================================================
+    // CONVERSIONS
+    // ============================================================
+    function to24h(h, m, ampm) {
+      let h24 = h;
+      if (ampm === 'AM' && h === 12) h24 = 0;
+      else if (ampm === 'PM' && h !== 12) h24 = h + 12;
+      return h24 * 60 + m; // total minutes from midnight
+    }
+
+    function toDisplay(totalMin) {
+      let m = ((totalMin % 1440) + 1440) % 1440;
+      let h24 = Math.floor(m / 60);
+      let mm = m % 60;
+      let ampm = h24 >= 12 ? 'PM' : 'AM';
+      let h12 = h24 % 12 || 12;
+      return { text: `${h12}:${String(mm).padStart(2,'0')} ${ampm}`, h24, mm, ampm };
+    }
+
+    function formatDuration(min) {
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+
+    // ============================================================
+    // CALCULATE WAKE-UP TIMES (Bedtime → Wake)
+    // ============================================================
+    function calculateWakeUp() {
+      const bedTotal = to24h(state.bedHour, state.bedMin, state.bedAmPm);
+      const sleepStart = bedTotal + state.onset; // when you actually fall asleep
+      const results = [];
+
+      for (let cycles = 3; cycles <= 7; cycles++) {
+        const sleepDuration = cycles * state.cycle; // minutes
+        const wakeTotal = sleepStart + sleepDuration;
+        const disp = toDisplay(wakeTotal);
+        const quality = getQuality(cycles);
+
+        results.push({
+          cycles,
+          time: disp.text,
+          duration: formatDuration(sleepDuration),
+          quality,
+          totalMin: wakeTotal,
+          sleepDuration
+        });
+      }
+
+      renderResults('bed-results', results, 'wake');
+    }
+
+    // ============================================================
+    // CALCULATE BEDTIMES (Wake → Bedtime)
+    // ============================================================
+    function calculateBedtime() {
+      const wakeTotal = to24h(state.wakeHour, state.wakeMin, state.wakeAmPm);
+      const results = [];
+
+      for (let cycles = 7; cycles >= 3; cycles--) {
+        const sleepDuration = cycles * state.cycle;
+        const sleepStart = wakeTotal - sleepDuration;
+        const bedTotal = sleepStart - state.onset;
+        const disp = toDisplay(bedTotal);
+        const quality = getQuality(cycles);
+
+        results.push({
+          cycles,
+          time: disp.text,
+          duration: formatDuration(sleepDuration),
+          quality,
+          totalMin: bedTotal,
+          sleepDuration
+        });
+      }
+
+      renderResults('wake-results', results, 'bed');
+    }
+
+    function getQuality(cycles) {
+      if (cycles >= 6) return { label: 'Full Rest', cls: 'ideal' };
+      if (cycles === 5) return { label: 'Ideal', cls: 'ideal' };
+      if (cycles === 4) return { label: 'Good', cls: 'good' };
+      if (cycles === 3) return { label: 'Minimum', cls: 'ok' };
+      return { label: 'Too Short', cls: 'short' };
+    }
+
+    // ============================================================
+    // RENDER RESULTS
+    // ============================================================
+    function renderResults(containerId, results, mode) {
+      const container = document.getElementById(containerId);
+      let html = '';
+
+      // Instruction hint
+      if (mode === 'wake') {
+        html += '<p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:14px; text-align:center;">👆 Tap a time to select it, then set your alarm</p>';
+      }
+
+      // Results cards
+      html += '<div class="results-section"><h3>Recommended Times</h3>';
+      results.forEach((r, i) => {
+        html += `
+          <div class="result-card ${r.quality.cls}" data-time="${r.totalMin}" data-display="${r.time}" data-cycles="${r.cycles}" data-duration="${r.duration}" onclick="selectResult(this, '${mode}')">
+            <div class="result-left">
+              <div class="result-time">${r.time}</div>
+              <div class="result-meta">${r.cycles} cycles · ${r.duration} of sleep</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="result-badge">${r.quality.label}</div>
+              ${mode === 'wake' ? '<button class="result-alarm-btn set-inline" onclick="event.stopPropagation(); setAlarmFromCard(this.closest(\'.result-card\'))">🔔 Set Alarm</button>' : ''}
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      // Cycle visualization for the ideal result
+      const ideal = results.find(r => r.cycles === 5) || results[Math.floor(results.length / 2)];
+      html += renderCycleViz(ideal.cycles);
+
+      // Active alarm status bar (only for wake mode)
+      if (mode === 'wake') {
+        const isNative = !!getNativeAlarmPlugin();
+        html += `
+          <div class="alarm-card hidden" id="alarm-status-bar">
+            <h3>⏰ Alarm Active</h3>
+            <div class="alarm-time-display" id="alarm-display">—</div>
+            <div class="alarm-remaining" id="alarm-remaining"></div>
+            ${isNative ? '<p style="font-size:0.8rem; color:var(--green); margin-bottom:14px;">📱 Native Android alarm · rings even when locked</p>' : ''}
+            <button class="alarm-set-btn cancel" id="alarm-cancel-btn" onclick="cancelAlarmAndReset()">
+              ❌ Cancel Alarm
+            </button>
+            ${isNative ? '<button class="reset-profile-btn" style="margin-top:10px; color:var(--purple-light);" onclick="openInSystemClock()">🕐 Also add to Phone Clock app</button>' : ''}
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+
+      // Restore alarm state if already active
+      if (mode === 'wake' && state.alarmActive && state.selectedAlarmTime) {
+        showAlarmStatusBar();
+      }
+    }
+
+    function renderCycleViz(cycles) {
+      // Build a visual representation of sleep cycles
+      const stageColors = {
+        light: 'var(--blue)',
+        deep: '#2d3436',
+        rem: 'var(--purple)'
+      };
+
+      let segments = '';
+      for (let c = 0; c < cycles; c++) {
+        // Each cycle: Light (15%) → Deep (more in early, less in late) → Light (15%) → REM (more in late)
+        const deepPct = c < 2 ? 30 : (c < 4 ? 15 : 8);
+        const remPct = c < 2 ? 15 : (c < 4 ? 25 : 35);
+        const lightPct = 100 - deepPct - remPct;
+        const halfLight = lightPct / 2;
+
+        const segWidth = (100 / cycles);
+
+        segments += `<div class="cycle-segment light" style="width:${segWidth * halfLight / 100}%"></div>`;
+        segments += `<div class="cycle-segment deep" style="width:${segWidth * deepPct / 100}%">${c < 2 ? '' : ''}</div>`;
+        segments += `<div class="cycle-segment light" style="width:${segWidth * halfLight / 100}%"></div>`;
+        segments += `<div class="cycle-segment rem" style="width:${segWidth * remPct / 100}%">${c >= cycles - 2 ? '' : ''}</div>`;
+      }
+
+      return `
+        <div class="cycle-viz">
+          <h3>Sleep Cycle Map · ${cycles} Cycles</h3>
+          <div class="cycle-bar-container">${segments}</div>
+          <div class="cycle-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Light</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#2d3436; border: 1px solid var(--text-dim)"></div> Deep</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div> REM</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============================================================
+    // SELECT RESULT & ALARM
+    // ============================================================
+    function selectResult(el, mode) {
+      // Deselect others
+      document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+
+      state.selectedAlarmTime = {
+        totalMin: parseInt(el.dataset.time),
+        display: el.dataset.display,
+        cycles: el.dataset.cycles,
+        duration: el.dataset.duration
+      };
+    }
+
+    function setAlarmFromCard(el) {
+      // Select the card first
+      document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+
+      state.selectedAlarmTime = {
+        totalMin: parseInt(el.dataset.time),
+        display: el.dataset.display,
+        cycles: el.dataset.cycles,
+        duration: el.dataset.duration
+      };
+
+      // If alarm already active, cancel it first
+      if (state.alarmActive) cancelAlarm();
+
+      // Set the alarm
+      setAlarm();
+
+      // Update the card's button to show it's active
+      document.querySelectorAll('.result-alarm-btn').forEach(btn => {
+        const card = btn.closest('.result-card');
+        if (card === el) {
+          btn.className = 'result-alarm-btn active-inline';
+          btn.textContent = '❌ Cancel';
+          btn.onclick = function(e) { e.stopPropagation(); cancelAlarmAndReset(); };
+        } else {
+          btn.className = 'result-alarm-btn set-inline';
+          btn.textContent = '🔔 Set Alarm';
+          btn.onclick = function(e) { e.stopPropagation(); setAlarmFromCard(card); };
+        }
+      });
+
+      // Show alarm status bar
+      showAlarmStatusBar();
+    }
+
+    function showAlarmStatusBar() {
+      const bar = document.getElementById('alarm-status-bar');
+      if (!bar) return;
+      bar.classList.remove('hidden');
+      document.getElementById('alarm-display').textContent = state.selectedAlarmTime.display;
+
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let diff = (state.selectedAlarmTime.totalMin % 1440) - nowMin;
+      if (diff <= 0) diff += 1440;
+      document.getElementById('alarm-remaining').textContent =
+        `⏳ ${state.selectedAlarmTime.cycles} cycles · ${state.selectedAlarmTime.duration} · rings in ${formatDuration(diff)}`;
+    }
+
+    function cancelAlarmAndReset() {
+      cancelAlarm();
+      // Reset all card buttons
+      document.querySelectorAll('.result-alarm-btn').forEach(btn => {
+        btn.className = 'result-alarm-btn set-inline';
+        btn.textContent = '🔔 Set Alarm';
+        const card = btn.closest('.result-card');
+        btn.onclick = function(e) { e.stopPropagation(); setAlarmFromCard(card); };
+      });
+      document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
+      // Hide status bar
+      const bar = document.getElementById('alarm-status-bar');
+      if (bar) bar.classList.add('hidden');
+    }
+
+    // ============================================================
+    // ALARM (Native Android via Capacitor + Web Fallback)
+    // ============================================================
+    function getNativeAlarmPlugin() {
+      try {
+        if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+          return window.Capacitor.Plugins && window.Capacitor.Plugins.AwakeTimeAlarm ? window.Capacitor.Plugins.AwakeTimeAlarm : null;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function toggleAlarm() {
+      if (state.alarmActive) {
+        cancelAlarmAndReset();
+      } else {
+        setAlarmFromCard(document.querySelector('.result-card.selected'));
+      }
+    }
+
+    function setAlarm() {
+      if (!state.selectedAlarmTime) return;
+
+      const targetMin = ((state.selectedAlarmTime.totalMin % 1440) + 1440) % 1440;
+      const targetHour = Math.floor(targetMin / 60);
+      const targetMinute = targetMin % 60;
+      const nativeAlarm = getNativeAlarmPlugin();
+
+      state.alarmActive = true;
+      localStorage.setItem('awaketime-active-alarm', JSON.stringify(state.selectedAlarmTime));
+
+      if (nativeAlarm) {
+        const useCustom = state.sound === 'custom' && !!state.customSoundData;
+        nativeAlarm.scheduleAlarm({
+          hour: targetHour,
+          minute: targetMinute,
+          timeLabel: state.selectedAlarmTime.display,
+          useCustomSound: useCustom,
+          customSoundBase64: useCustom ? state.customSoundData : null
+        }).catch(err => {
+          console.error('Native scheduleAlarm error:', err);
+        });
+
+        // Update countdown every minute and check native ringing state
+        state.remainingInterval = setInterval(() => {
+          showAlarmStatusBar();
+          syncNativeAlarmStatus();
+        }, 15000);
+        return;
+      }
+
+      // Web fallback: browser Notification + setTimeout
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let diff = targetMin - nowMin;
+      if (diff <= 0) diff += 1440;
+      const msUntilAlarm = diff * 60 * 1000 - (now.getSeconds() * 1000);
+
+      state.alarmTimeout = setTimeout(() => {
+        triggerAlarm();
+      }, msUntilAlarm);
+
+      // Update remaining time every minute
+      state.remainingInterval = setInterval(showAlarmStatusBar, 60000);
+    }
+
+    function cancelAlarm() {
+      if (state.alarmTimeout) clearTimeout(state.alarmTimeout);
+      if (state.remainingInterval) clearInterval(state.remainingInterval);
+      state.alarmActive = false;
+      localStorage.removeItem('awaketime-active-alarm');
+
+      const nativeAlarm = getNativeAlarmPlugin();
+      if (nativeAlarm) {
+        nativeAlarm.cancelAlarm().catch(() => {});
+      }
+    }
+
+    function openInSystemClock() {
+      const nativeAlarm = getNativeAlarmPlugin();
+      if (!nativeAlarm || !state.selectedAlarmTime) return;
+      const targetMin = ((state.selectedAlarmTime.totalMin % 1440) + 1440) % 1440;
+      nativeAlarm.openSystemClock({
+        hour: Math.floor(targetMin / 60),
+        minute: targetMin % 60,
+        label: 'AwakeTime · Light Sleep Wake-Up'
+      }).catch(() => {});
+    }
+
+    function syncNativeAlarmStatus() {
+      const nativeAlarm = getNativeAlarmPlugin();
+      if (!nativeAlarm) return;
+      nativeAlarm.getStatus().then(status => {
+        if (status && status.isRinging) {
+          const ringing = document.getElementById('alarm-ringing');
+          ringing.classList.add('active');
+          document.getElementById('ring-time').textContent =
+            status.ringingTimeLabel || state.selectedAlarmTime?.display || '';
+        } else if (status && status.hasScheduledAlarm) {
+          const saved = localStorage.getItem('awaketime-active-alarm');
+          if (saved && !state.selectedAlarmTime) {
+            try { state.selectedAlarmTime = JSON.parse(saved); } catch (e) {}
+          }
+          if (!state.selectedAlarmTime && status.scheduledTimeLabel) {
+            const dt = new Date(status.triggerAtMillis);
+            state.selectedAlarmTime = {
+              totalMin: dt.getHours() * 60 + dt.getMinutes(),
+              display: status.scheduledTimeLabel,
+              cycles: '—',
+              duration: 'scheduled'
+            };
+          }
+          state.alarmActive = true;
+          showAlarmStatusBar();
+        }
+      }).catch(() => {});
+    }
+
+    function triggerAlarm() {
+      state.alarmActive = false;
+      localStorage.removeItem('awaketime-active-alarm');
+      if (state.remainingInterval) clearInterval(state.remainingInterval);
+
+      // Show ringing overlay
+      const ringing = document.getElementById('alarm-ringing');
+      ringing.classList.add('active');
+      document.getElementById('ring-time').textContent = state.selectedAlarmTime?.display || '';
+
+      // Play sound
+      playAlarmSound();
+
+      // Send notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('⏰ AwakeTime Alarm', {
+          body: `It's ${state.selectedAlarmTime?.display}! Time to wake up — you're in light sleep now! 🌅`,
+          icon: '🌙',
+          requireInteraction: true,
+          tag: 'awaketime-alarm'
+        });
+      }
+    }
+
+    function stopAlarm() {
+      const ringing = document.getElementById('alarm-ringing');
+      ringing.classList.remove('active');
+      stopAlarmSound();
+      const nativeAlarm = getNativeAlarmPlugin();
+      if (nativeAlarm) {
+        nativeAlarm.stopRinging().catch(() => {});
+      }
+      cancelAlarmAndReset();
+    }
+
+    // Listen for service worker messages
+    navigator.serviceWorker?.addEventListener('message', e => {
+      if (e.data.type === 'STOP_ALARM') stopAlarm();
+    });
+
+    // ============================================================
+    // ALARM SOUNDS (Web Audio API + Custom Upload)
+    // ============================================================
+    function playAlarmSound() {
+      // If custom sound is selected and available, play it
+      if (state.sound === 'custom' && state.customSoundData) {
+        playCustomAlarmSound();
+        return;
+      }
+
+      state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = state.audioCtx;
+
+      function playTone() {
+        if (!state.audioCtx) return;
+
+        const sounds = {
+          gentle: [440, 523, 659, 784],
+          birds:  [1047, 1175, 1319, 1047],
+          chime:  [523, 659, 784, 1047],
+          classic:[880, 0, 880, 0]
+        };
+
+        const freqs = sounds[state.sound] || sounds.gentle;
+        const now = ctx.currentTime;
+
+        freqs.forEach((freq, i) => {
+          if (freq === 0) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = state.sound === 'classic' ? 'square' : 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0, now + i * 0.3);
+          gain.gain.linearRampToValueAtTime(0.3, now + i * 0.3 + 0.05);
+          gain.gain.linearRampToValueAtTime(0, now + i * 0.3 + 0.25);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.3);
+          osc.stop(now + i * 0.3 + 0.3);
+        });
+      }
+
+      playTone();
+      state.alarmInterval = setInterval(playTone, 2000);
+    }
+
+    function playCustomAlarmSound() {
+      const audio = new Audio(state.customSoundData);
+      audio.loop = true;
+      audio.volume = 1.0;
+      audio.play().catch(() => {
+        // Fallback to built-in if custom fails
+        state.sound = 'gentle';
+        playAlarmSound();
+      });
+      state.customAudioEl = audio;
+    }
+
+    function stopAlarmSound() {
+      if (state.alarmInterval) clearInterval(state.alarmInterval);
+      if (state.audioCtx) {
+        state.audioCtx.close();
+        state.audioCtx = null;
+      }
+      if (state.customAudioEl) {
+        state.customAudioEl.pause();
+        state.customAudioEl.currentTime = 0;
+        state.customAudioEl = null;
+      }
+    }
+
+    function previewSound(sound) {
+      // If custom, preview the custom audio
+      if (sound === 'custom' && state.customSoundData) {
+        previewCustomSound();
+        return;
+      }
+
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const sounds = {
+        gentle: [440, 523, 659],
+        birds:  [1047, 1175, 1319],
+        chime:  [523, 659, 784],
+        classic:[880, 0, 880]
+      };
+
+      const freqs = sounds[sound] || sounds.gentle;
+      const now = ctx.currentTime;
+
+      freqs.forEach((freq, i) => {
+        if (freq === 0) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = sound === 'classic' ? 'square' : 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0, now + i * 0.2);
+        gain.gain.linearRampToValueAtTime(0.15, now + i * 0.2 + 0.03);
+        gain.gain.linearRampToValueAtTime(0, now + i * 0.2 + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + i * 0.2);
+        osc.stop(now + i * 0.2 + 0.2);
+      });
+
+      setTimeout(() => ctx.close(), 1000);
+    }
+
+    // ============================================================
+    // CUSTOM SOUND UPLOAD
+    // ============================================================
+    function handleSoundUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Validate size (5 MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File too large! Max 5 MB.');
+        event.target.value = '';
+        return;
+      }
+
+      // Validate type
+      if (!file.type.startsWith('audio/')) {
+        alert('Please upload an audio file (MP3, WAV, OGG, M4A).');
+        event.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        state.customSoundData = e.target.result; // base64 data URL
+        state.customSoundName = file.name;
+
+        // Save to localStorage
+        try {
+          localStorage.setItem('awaketime-custom-sound', state.customSoundData);
+          localStorage.setItem('awaketime-custom-sound-name', state.customSoundName);
+        } catch(err) {
+          alert('File too large to save locally. Try a smaller file.');
+          return;
+        }
+
+        // Show custom sound UI and auto-select it
+        showCustomSoundUI(file.name);
+        selectSound('custom');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showCustomSoundUI(name) {
+      document.getElementById('custom-sound-btn').style.display = '';
+      document.getElementById('custom-sound-info').classList.remove('hidden');
+      document.getElementById('custom-sound-name').textContent = name;
+      document.getElementById('upload-area').querySelector('.upload-text').innerHTML =
+        'Replace with a different file<small>MP3, WAV, OGG, M4A — max 5 MB</small>';
+    }
+
+    function previewCustomSound() {
+      if (!state.customSoundData) return;
+
+      // Stop any existing preview
+      if (state._previewAudio) {
+        state._previewAudio.pause();
+        state._previewAudio = null;
+      }
+
+      const audio = new Audio(state.customSoundData);
+      audio.volume = 0.5;
+      audio.play();
+      state._previewAudio = audio;
+
+      // Stop after 3 seconds
+      setTimeout(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }, 3000);
+    }
+
+    function deleteCustomSound() {
+      state.customSoundData = null;
+      state.customSoundName = null;
+      localStorage.removeItem('awaketime-custom-sound');
+      localStorage.removeItem('awaketime-custom-sound-name');
+
+      // Hide custom sound UI
+      document.getElementById('custom-sound-btn').style.display = 'none';
+      document.getElementById('custom-sound-info').classList.add('hidden');
+      document.getElementById('upload-area').querySelector('.upload-text').innerHTML =
+        'Upload your own alarm sound<small>MP3, WAV, OGG, M4A — max 5 MB</small>';
+
+      // Reset file input
+      document.getElementById('sound-file-input').value = '';
+
+      // If custom was selected, switch to gentle
+      if (state.sound === 'custom') {
+        selectSound('gentle');
+      }
+    }
+
+    // ============================================================
+    // TOUCH HANDLING (swipe between tabs)
+    // ============================================================
+    let touchStartX = 0;
+    let swipeIgnored = false;
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      // Don't switch tabs while dragging a slider or typing in a field
+      swipeIgnored = !!e.target.closest('input, textarea, select, .mode-tabs');
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+      if (swipeIgnored) return;
+      const diff = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(diff) < 60) return;
+      const currentIdx = [...tabs].findIndex(t => t.classList.contains('active'));
+      let newIdx;
+      if (diff < 0 && currentIdx < tabs.length - 1) newIdx = currentIdx + 1;
+      else if (diff > 0 && currentIdx > 0) newIdx = currentIdx - 1;
+      if (newIdx !== undefined) tabs[newIdx].click();
+    });
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    loadSettings();
+
+    // Register service worker (skip inside native Capacitor APK)
+    if ('serviceWorker' in navigator && !getNativeAlarmPlugin()) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // Auto-calculate on load
+    calculateWakeUp();
+
+    // Sync with native Android alarm service on startup & resume
+    syncNativeAlarmStatus();
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) syncNativeAlarmStatus();
+    });
+  </script>
+</body>
+</html>

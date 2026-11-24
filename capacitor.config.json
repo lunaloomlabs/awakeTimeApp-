@@ -1,0 +1,9 @@
+{
+  "appId": "com.awaketime.app",
+  "appName": "AwakeTime",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0a0a1a",
+    "allowMixedContent": false
+  }
+}
